@@ -7,7 +7,7 @@
 ;*  CLOCK: 	    		Intern Osc - 31 kHz(Op til 8 MHZ m. intern osc.)	*
 ;*  FILE:  	        	Main Controller.c				                  	*
 ;*  WATCHDOGTIMER:  	no                                               	*
-;*  REVISION:	    	31.10.2023                                       	*
+;*  REVISION:	    	17.03.2023                                       	*
 ;*                                                                          *
 ;*                                                                          *
 ;****************************************************************************
@@ -15,22 +15,22 @@
 ;*  PIN CONFIGURATION TIL HARDWAREN:
 
 ;*  RA0 = Digital INPUT  ; PIN 17, Input fra forstærker
-;*  RA1 = Digital INPUT  ; PIN 18, Output til transistor til relæ
+;*  RA1 = Digital OUTPUT ; PIN 18, Output til transistor til relæ
 ;*  RA2 = Digital INPUT  ; PIN 1, Input fra radioreciver
 ;*  RA3 = Digital INPUT  ; PIN 2, Input fra pin 3/Q14 på 4060
-;*  RA4 = Digital INPUT  ; PIN 3, Output til transistor til kraftig LED
-;*  RA5 = Digital INPUT  ; (OBS: RA5 kan kun være input - Vær opmærksom på dette!!!)
-;*  RA6 = Digital INPUT 
-;*  RA7 = Digital INPUT 
+;*  RA4 = Digital OUTPUT ; PIN 3, Output til transistor til kraftig LED
+;*  RA5 = Digital INPUT  ; PIN 4, Input fra (OBS: RA5 kan kun være input - Vær opmærksom på dette!!!)
+;*  RA6 = N/A   		 ; PIN 15 - Ikke i brug
+;*  RA7 = N/A	   		 ; PIN 16 - Ikke i brug
 
-;*  RB0 = Digital Output 
-;*  RB1 = Digital Output 
-;*  RB2 = Digital Output
-;*  RB3 = Digital Output
-;*  RB4 = Digital Output 
-;*  RB5 = Digital Output
-;*  RB6 = Digital Output
-;*  RB7 = Digital Output
+;*  RB0 = Digital Output ; PIN 6 DD til 4511 nr. 1
+;*  RB1 = Digital Output ; PIN 7 DC til 4511 nr. 1
+;*  RB2 = Digital Output ; PIN 8 DB til 4511 nr. 1
+;*  RB3 = Digital Output ; PIN 9 DA til 4511 nr. 1
+;*  RB4 = Digital Output ; PIN 10 DD til 4511 nr. 2
+;*  RB5 = Digital Output ; PIN 11 DC til 4511 nr. 2
+;*  RB6 = Digital Output ; PIN 12 DB til 4511 nr. 2
+;*  RB7 = Digital Output ; PIN 13 DA til 4511 nr. 2
 
   
 
@@ -47,7 +47,7 @@ W		EQU		0		; 'direction' flag (target - hvor skal resultatet placeres)
 F		EQU		1		; 'direction' flag (target - hvor skal resultatet placeres)
 
 
-TMR0	EQU 	0x0001	;dvs TMR0  (TIMERO) er filen pÃ¥ adressen 01
+TMR0	EQU 	0x0001	;dvs TMR0  (TIMERO) er filen på adressen 01
 						;TIMER0 er en 8-bit timer med 8-bit prescaler
 						;  (TIMER1 er 16 bit)
 
@@ -60,7 +60,7 @@ ZEROBIT	EQU   	2   	;Zerobit er bit nr. 2 (i status-registret)
 ADCON0	EQU		0x001F	;A/D configurations register nr. 0  (ligger i bank 0) - Se datablad side 81
 ADCON1	EQU		0x009F	;A/D configurations register nr. 1  (ligger i bank 1) - Se datablad side 82
 
-ADRESH	EQU		0x001E	;De Ã¸verste 8 bit i AD-resultatet placeres i adresse 1E (De 8 mest betydende)
+ADRESH	EQU		0x001E	;De øverste 8 bit i AD-resultatet placeres i adresse 1E (De 8 mest betydende)
 ADRESL	EQU		0x009E	;De nederste 2 bit i AD-resultatet placeres i adresse 9E (De 2 mindst betydende)
 
 TRISA	EQU		0x0085	;Tristate Port A (in/out)
@@ -68,16 +68,16 @@ TRISB	EQU		0x0086	;Tristate Port B (in/out)
 
 AN0		EQU		0		;Analog input AN0 er bit nr. 0 (pÃ¥ port A - dvs ben nr. 17)
 
-RA5		EQU		5		;RA5 er bit nr. 5 (pÃ¥ port A - ben 4)
+RA5		EQU		5		;RA5 er bit nr. 5 (på port A - ben 4)
 
-RB0		EQU		0		;RB0 er bit nr. 0 (pÃ¥ port B - ben 6)
-RB1		EQU		1		;RB1 er bit nr. 1 (pÃ¥ port B - ben 7)
-RB2		EQU		2		;RB2 er bit nr. 2 (pÃ¥ port B - ben 8)
-RB3		EQU		3		;RB3 er bit nr. 3 (pÃ¥ port B - ben 9)
-RB4		EQU		4		;RB4 er bit nr. 4 (pÃ¥ port B - ben 10)
-RB5		EQU		5		;RB5 er bit nr. 5 (pÃ¥ port B - ben 11) 
-RB6		EQU		6		;RB6 er bit nr. 6 (pÃ¥ port B - ben 12) 
-RB7		EQU		7		;RB7 er bit nr. 7 (pÃ¥ port B - ben 13)
+RB0		EQU		0		;RB0 er bit nr. 0 (på port B - ben 6)
+RB1		EQU		1		;RB1 er bit nr. 1 (på port B - ben 7)
+RB2		EQU		2		;RB2 er bit nr. 2 (på port B - ben 8)
+RB3		EQU		3		;RB3 er bit nr. 3 (på port B - ben 9)
+RB4		EQU		4		;RB4 er bit nr. 4 (på port B - ben 10)
+RB5		EQU		5		;RB5 er bit nr. 5 (på port B - ben 11) 
+RB6		EQU		6		;RB6 er bit nr. 6 (på port B - ben 12) 
+RB7		EQU		7		;RB7 er bit nr. 7 (på port B - ben 13)
 
 
 
@@ -141,7 +141,7 @@ SETUP	BCF		STATUS,6			;Dvs ikke bank 2 eller 3 - hhv 'b'10 og 'b'11 for RP1,RP0
 
 
 		MOVLW	B'00000110'			;FortÃ¦ller at A0 (RA0) er DIGITAL input (se side 170 i bogen
-									;"PIC in practice" - eller pÃ¥ side 82 i datablad for 16F818/819)
+									;"PIC in practice" - eller på side 82 i datablad for 16F818/819)
 									; Se RIGISTER 11-2 i databladet
 		MOVWF	ADCON1				;Informationen placeres i AD control register nr. 1
 
