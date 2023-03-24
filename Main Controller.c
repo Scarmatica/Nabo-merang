@@ -14,14 +14,17 @@
 
 ;*  PIN CONFIGURATION TIL HARDWAREN:
 
-;*  RA0 = Digital INPUT  ; PIN 17, Input fra forstærker
-;*  RA1 = Digital OUTPUT ; PIN 18, Output til transistor til relæ
-;*  RA2 = Digital INPUT  ; PIN 1, Input fra radioreciver
-;*  RA3 = Digital INPUT  ; PIN 2, Input fra pin 3/Q14 på 4060
-;*  RA4 = Digital OUTPUT ; PIN 3, Output til transistor til kraftig LED
-;*  RA5 = Digital INPUT  ; PIN 4, Input fra (OBS: RA5 kan kun være input - Vær opmærksom på dette!!!)
-;*  RA6 = N/A   		 ; PIN 15 - Ikke i brug
-;*  RA7 = N/A	   		 ; PIN 16 - Ikke i brug
+;*  RA0 = Analog INPUT    ; PIN 17, Input fra forstærker
+;*  RA1 = Analog INPUT	  ; PIN 18, Input fra lysafhængig modstand
+;*  RA2 = Digital INPUT   ; PIN 1, Input fra radiosystem
+;*  RA3 = N/A			  ; PIN 2, 
+;*  RA4 = Digital INPUT   ; PIN 3, Input fra pin 3/Q14 på 4060
+;*  RA5 = N/A			  ; PIN 4,
+;*  RA6 = Digital OUTPUT  ; PIN 15 - Output til transistor til kraftig LED
+;*  RA7 = Digital OUTPUT  ; PIN 16 - Output til relæ for højtaler
+:*  Bemærk at følgende PIN-konfiguration er nødvendig, da AD-convertering skal bruges i programmet(DADAA)
+
+
 
 ;*  RB0 = Digital Output ; PIN 6 DD til 4511 nr. 1
 ;*  RB1 = Digital Output ; PIN 7 DC til 4511 nr. 1
@@ -47,18 +50,18 @@ W		EQU		0		; 'direction' flag (target - hvor skal resultatet placeres)
 F		EQU		1		; 'direction' flag (target - hvor skal resultatet placeres)
 
 
-TMR0	EQU 	0x0001	;dvs TMR0  (TIMERO) er filen på adressen 01
-						;TIMER0 er en 8-bit timer med 8-bit prescaler
-						;  (TIMER1 er 16 bit)
+TMR0	EQU 	0x0001	; Placerer TMR0 på adressen 01
+						; TIMER0 er en 8-bit timer med 8-bit prescaler
+						; (TIMER1 er 16 bit)
 
-STATUS	EQU		0x0003	;dvs STATUS-reg er file 03 (indeholder bl.a. zerobit)
-PORTA   EQU		0x0005	;dvs PORTA  er file 05
-PORTB	EQU		0x0006	;dvs PORTB  er file 06
+STATUS	EQU		0x0003	; STATUS-reg er fil nr 03 (indeholder bl.a. zerobit)
+PORTA   EQU		0x0005	; PORTA  er fil nr. 05
+PORTB	EQU		0x0006	; PORTB  er fil nr. 06
 
 ZEROBIT	EQU   	2   	;Zerobit er bit nr. 2 (i status-registret)
 
-ADCON0	EQU		0x001F	;A/D configurations register nr. 0  (ligger i bank 0) - Se datablad side 81
-ADCON1	EQU		0x009F	;A/D configurations register nr. 1  (ligger i bank 1) - Se datablad side 82
+ADCON0	EQU		0x001F	;A/D configurations register nr. 0  (ligger i bank 0) - Se datablad for PIC side 81
+ADCON1	EQU		0x009F	;A/D configurations register nr. 1  (ligger i bank 1) - Se datablad for PIC side 82
 
 ADRESH	EQU		0x001E	;De øverste 8 bit i AD-resultatet placeres i adresse 1E (De 8 mest betydende)
 ADRESL	EQU		0x009E	;De nederste 2 bit i AD-resultatet placeres i adresse 9E (De 2 mindst betydende)
@@ -66,7 +69,7 @@ ADRESL	EQU		0x009E	;De nederste 2 bit i AD-resultatet placeres i adresse 9E (De 
 TRISA	EQU		0x0085	;Tristate Port A (in/out)
 TRISB	EQU		0x0086	;Tristate Port B (in/out)
 
-AN0		EQU		0		;Analog input AN0 er bit nr. 0 (pÃ¥ port A - dvs ben nr. 17)
+AN0		EQU		0		;Analog input AN0 er bit nr. 0 (på port A - dvs ben nr. 17)
 
 RA5		EQU		5		;RA5 er bit nr. 5 (på port A - ben 4)
 
@@ -88,9 +91,9 @@ RB7		EQU		7		;RB7 er bit nr. 7 (på port B - ben 13)
 		LIST	P=PIC16F819			;angiver PIC-type
 		RADIX	hex					;Standard er hex
 		ORG		0x0000				;Programmet starter her, 
-									;org sÃ¦tter origin til 0x0000
+									;org sætter origin til 0x0000
 
-		GOTO	SETUP				;GÃ¥ til setup-delen, sÃ¥ porte defineres og alt bliver nulstillet og klart. Hurra!
+		GOTO	SETUP				;Gå til setup-delen, så porte defineres og alt bliver nulstillet
 
 
 
@@ -113,7 +116,7 @@ RB7		EQU		7		;RB7 er bit nr. 7 (på port B - ben 13)
 									;Lov Voltage Program. Disabled
 									;EE protect disabled
 									;Flash Program Write Protection Disabled
-									;CCP1 Mux pÃ¥ RB2 (ikke RB3)
+									;CCP1 Mux på RB2 (ikke RB3)
 									;Code Protection Disabled
 
 ;****************************************************************************
@@ -128,11 +131,11 @@ RB7		EQU		7		;RB7 er bit nr. 7 (på port B - ben 13)
 
 SETUP	BCF		STATUS,6			;Dvs ikke bank 2 eller 3 - hhv 'b'10 og 'b'11 for RP1,RP0
 
-		BSF		STATUS,5			;GÃ¥ til Bank 1 (5. bit kaldes ogsÃ¥ RP0) 
-									; - operationen kaldes ogsÃ¥ "Bank Select"
+		BSF		STATUS,5			;Gå til Bank 1 (5. bit kaldes også RP0) 
+									; - operationen kaldes også "Bank Select"
 
-		MOVLW	B'11111111'			;Hele PORT A er input RA0-RA7 
-									;RA5 kan kun vÃ¦re input (Input fra knap)
+		MOVLW	B'00010111'			;Ift. AD-configurationen, så er følgende fordeling af  
+									;RA5 kan kun være input
 		MOVWF	TRISA				;Sæt in-out bitmønstret til tris-reg. port A (file 85H)
 
 
@@ -140,39 +143,47 @@ SETUP	BCF		STATUS,6			;Dvs ikke bank 2 eller 3 - hhv 'b'10 og 'b'11 for RP1,RP0
 		MOVWF	TRISB				;Placer informationen i tris-reg. port B (file 86H)
 
 
-		MOVLW	B'00000110'			;FortÃ¦ller at A0 (RA0) er DIGITAL input (se side 170 i bogen
+		MOVLW	B'00000100'			;Fortæller at AD-configurationen følger DADAA input (se side 170 i bogen
 									;"PIC in practice" - eller på side 82 i datablad for 16F818/819)
 									; Se RIGISTER 11-2 i databladet
 		MOVWF	ADCON1				;Informationen placeres i AD control register nr. 1
 
-		MOVLW	B'01000000'			;FortÃ¦ller intern clock skal vÃ¦re 1 MHz (Op til 8 MHz)
+		MOVLW	B'01000100'			;Fortæller intern clock skal være 1 MHz (Op til 8 MHz), samt at PIC venter med at starte koden indtil frekvensen er stabil
 									;(Se side 38 i datablad) ,  bit  IOFS=0 
-		MOVWF	OSCCON				;OSCCON ligger pÃ¥ adressen 0x8F - altsÃ¥ i bank 1
+		MOVWF	OSCCON				;OSCCON ligger på adressen 0x8F - altså i bank 1
 
 		
-		MOVLW	B'00000001'			;PreScaler er 1:4 -  Dvs. timerens tÃ¦llehastighed er rimelig hurtig !!!
+		MOVLW	B'00000111'			;PreScaler er 1:256 -  Dvs. timerens tællehastighed er rimelig langsom !!!
 									; (Bit 7 og 6 SKAL LIGE CHECKES m.h.p. INTERRUPT-KONTROL )
 		MOVWF	OPTION_R			;FortÃ¦l om prescaler-tallet til option registret
 
 		BCF		STATUS,5			;Vi hopper tilbage til bank 0. 
-									;(Vi er nemlig fÃ¦rdige med at snakke med de filer, som ligger i bank 1)
+									;(Vi er nemlig færdige med at snakke med de filer, som ligger i bank 1)
 	
 		CLRF	PORTA				;Nulstil portA
 		CLRF 	PORTB				;Nulstil portB
 	
-		CALL	GODAW				;Hop til Godaw
+		CALL	HALLØJ				;Gå til Halløj
 		
-		CALL	GODAW
+		CALL	HALLØJ
 		
-		CALL	GODAW
+		CALL	HALLØJ
+
+		BCF 	PORTA,7
 		
-		GOTO	MAIN				; Hop til main
+		GOTO	MAIN				; Gå til main
 
 
 ; SLUT PÃ… SETUP. 
 
 
-
+;****************************************************************************
+;*																			*
+;*																			*
+;*			             		 SUBRUTINER									*
+;*																			*
+;*																			*
+;****************************************************************************
 
 COUNT3			NOP
 				NOP
@@ -207,82 +218,43 @@ PAUSE			CALL 	COUNT1
 				CALL	COUNT1
 				RETURN
 
-GODAW			MOVLW	b'00001111'  ; Godaw fÃ¥r alle 4 LED til at blinke EN gang
-				MOVWF	PORTB
+HALLØJ			MOVLW	b'11000000'  ; Halløj får LED til at lyse og relæet aktiveres
+				MOVWF	PORTA
 				CALL	PAUSE
 				CALL	PAUSE
 				CLRF 	PORTB
 				CALL	PAUSE
 				CALL	PAUSE
 				CALL	PAUSE
+				MOVLW	b'00000000'
+				MOVWF	PORTA
 				RETURN 
+
+LYDBEHANDLING	GOTO 	VENT			; Lader lyden lyde VENTs tid
+				BSF		PORTA,7 		; Tænd for strømmen/tænd relæet
+				GOTO 	VENT			; Vent i et stykke tid indtil lyden er dødt hen
+				BCF		PORTA,7			; Sluk for strømmen/sluk relæet - lyden løber gennem nu
+				RETURN
+
+LYSBEHANDLING	BSF		PORTA,6			; Tænd for bit 6, som tænder for den kraftige LED
+				GOTO	VENT			; Vent en smule tid, så lyset bemærkes
+				BCF		PORTA,6			; Sluk for bit 6 igen
+				RETURN
+
+
+
+
 
 
 PAUSE_800_US	CLRF	TMR0 			; Timer0 nulstilles
 LOOP1 			MOVFW	TMR0 			; Flyt indholdet af TMR0 til W-registret
 				SUBLW	d'47'
-				BTFSS	STATUS,ZEROBIT 	; Tjek om det gav nul. Hvis ja: hop ud af lÃ¸kken
-				GOTO	LOOP1			; Hvis nej: bliv i lÃ¸kken (gÃ¥ til LOOP1-label)
+				BTFSS	STATUS,ZEROBIT 	; Tjek om det gav nul. Hvis ja: hop ud af løkken
+				GOTO	LOOP1			; Hvis nej: bliv i løkken (gå til LOOP1-label)
 				RETURN 					; Forlad subrutinen
 				
 
 
-SEND_0 			BSF 	PORTB,0 		; SÃ¦t bitâ€™en hÃ¸j
-				CALL	PAUSE_800_US 	; Vent 0,8 ms
-				BCF 	PORTB,0 		; SÃ¦t bitâ€™en lav
-				CALL 	PAUSE_800_US	; Vent 0,8 ms
-				RETURN 					; ReturnÃ©r
-
-SEND_1 			BSF		PORTB,0 		; SÃ¦t bitâ€™en hÃ¸j
-				CALL 	PAUSE_800_US 	;
-				CALL 	PAUSE_800_US 	; Vent i alt 1,6 ms (2 x 0,8 us)
-				BCF 	PORTB,0 		; SÃ¦t bitâ€™en lav
-				CALL	PAUSE_800_US 	;
-				CALL 	PAUSE_800_US 	; Vent i alt 1,6 ms (2 x 0,8 us)
-				RETURN 					; ReturnÃ©r
-
-
-
-SEND_BIT7 		BTFSS 	OUTPUT_BYTE,7 	; Hvis Bit7 er sat, så hop næste linje over
-				CALL 	SEND_0 			; Send tegnet “0”
-				BTFSC 	OUTPUT_BYTE,7 	; Hvis Bit7 er clear, så hop næste linje over
-				CALL 	SEND_1 			; Send tegnet “1”
-				RLF 	OUTPUT_BYTE 	; Roter OUTPUT_BYTE til venstre, så en ny bit er klar
-				RETURN 					; Returnér
-
-
-SEND_OUTPUT_BYTE	MOVLW 	d'8' 		; Flyt tallet 8 til W-reg
-					MOVWF BIT_TELLER 	; og videre til registret “BIT-TELLER”
-LOOP_SEND			CALL SEND_BIT7 		; Send en bit
-					DECFSZ BIT_TELLER 	; Tæl “BIT-TELLER” registret én ned 
-										; og tjek om den er nået til nul
-					GOTO LOOP_SEND 		; Hvis ikke nul endnu, så send en bit mere
-					RLF OUTPUT_BYTE 	; OUTPUT_BYTE roteres en sidste gang, så den er
-										; tilbage ved den oprindelige tilstand. Husk at der
-										; roteres gennem carry-bitten, så der skal roteres
-										; 9 gange før byten er tilbage ved 
-										; udgangspunktet.
-					RETURN 				; Returnér! Alle 8 bit er hermed sendt!
-
-
-SEND_STARTBIT 	BSF 	PORTB,RB0 		; Sæt bit’en høj
- 				CALL 	PAUSE_800_US 	; 
- 				CALL 	PAUSE_800_US 	;
- 				CALL 	PAUSE_800_US 	; Vent ialt 2,4 ms (3 x 0,8 ms)
- 				CALL 	LIDT_EKSTRA 	; Nogle NOP’er for at “fin-tune” tiden
-				BCF 	PORTB,RB0 		; Sæt bit’en lav 
- 				CALL 	PAUSE_800_US 	;
- 				CALL 	PAUSE_800_US 	; 
- 				CALL 	PAUSE_800_US 	; Vent ialt 2,4 ms 
- 				RETURN 					; Returnér
-
-
-PAUSE_100ms		NOP
-				RETURN
-
-
-LIDT_EKSTRA		NOP
-				RETURN
 
 
 
@@ -292,11 +264,13 @@ LIDT_EKSTRA		NOP
 ;
 ;*********************************************************************************************
 
-MAIN			MOVLW	B'00111101'			;Hele PORT A er input RA0-RA7 
-											;RA5 kan kun vÃ¦re input (Input fra knap)
-				MOVWF	OUTPUT_BYTE
-				CALL	SEND_STARTBIT
-				CALL 	SEND_OUTPUT_BYTE	
-				Goto 	MAIN
+MAIN			BTFSS	PORTA, 0		; Tjek om der er lyd fra forstærkeren. Hvis der er, så aktiveres lydbehandling
+				GOTO	LYDBEHANDLING	; Gå til lydbehandling
+				BTFSS	PORTA, 1		; Tjek om der er strøm fra lyssensoren
+				GOTO 	LYSBEHANDLING	; Gå til lydbehandling
+				BTFSS	PORTA, 2		; Tjek om der er strøm fra radiosensoren
+				GOTO 	LYSBEHANDLING	; Gå til radiobehandling
+				GOTO 	VENT
+				GOTO 	MAIN
 
 END
