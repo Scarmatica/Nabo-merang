@@ -48,7 +48,7 @@
 
 W		EQU		0		; 'direction' flag (target - hvor skal resultatet placeres)
 F		EQU		1		; 'direction' flag (target - hvor skal resultatet placeres)
-
+Carry	EQU		0		;
 
 TMR0	EQU 	0x0001	; Placerer TMR0 på adressen 01
 						; TIMER0 er en 8-bit timer med 8-bit prescaler
@@ -81,6 +81,10 @@ RB4		EQU		4		;RB4 er bit nr. 4 (på port B - ben 10)
 RB5		EQU		5		;RB5 er bit nr. 5 (på port B - ben 11) 
 RB6		EQU		6		;RB6 er bit nr. 6 (på port B - ben 12) 
 RB7		EQU		7		;RB7 er bit nr. 7 (på port B - ben 13)
+
+LYSRES	EQU		0x24	;
+LYDRES	EQU		0x25	;
+
 
 
 
@@ -159,7 +163,7 @@ SETUP	BCF		STATUS,6			;Dvs ikke bank 2 eller 3 - hhv 'b'10 og 'b'11 for RP1,RP0
 
 		BCF		STATUS,5			;Vi hopper tilbage til bank 0. 
 									;(Vi er nemlig færdige med at snakke med de filer, som ligger i bank 1)
-	
+
 		CLRF	PORTA				;Nulstil portA
 		CLRF 	PORTB				;Nulstil portB
 	
@@ -174,7 +178,7 @@ SETUP	BCF		STATUS,6			;Dvs ikke bank 2 eller 3 - hhv 'b'10 og 'b'11 for RP1,RP0
 		GOTO	MAIN				; Gå til main
 
 
-; SLUT PÃ… SETUP. 
+; SLUT PÅ SETUP. 
 
 
 ;****************************************************************************
@@ -185,49 +189,26 @@ SETUP	BCF		STATUS,6			;Dvs ikke bank 2 eller 3 - hhv 'b'10 og 'b'11 for RP1,RP0
 ;*																			*
 ;****************************************************************************
 
-COUNT3			NOP
-				NOP
-				NOP
-				NOP
-				NOP
-				NOP
-				NOP
-				RETURN				
+VENT            MOVLW    d'48'
+                MOVWF    TELLER
+LOOP2           CLRF    TMR0
+LOOP3           MOVFW    TMR0
+                SUBLW    d'100'
+                BTFSS    STATUS,ZEROBIT
+                GOTO    LOOP3
+                DECFSZ    TELLER
+                GOTO    LOOP2
+                CLRF    TMR0
+                RETURN
 
-
-COUNT2			CALL	COUNT3    		
-				CALL	COUNT3
-				CALL	COUNT3
-				CALL	COUNT3
-				RETURN
-
-
-COUNT1			CALL 	COUNT2
-				CALL 	COUNT2
-				CALL 	COUNT2
-				CALL 	COUNT2
-				RETURN
-
-
-PAUSE			CALL 	COUNT1		
-				CALL 	COUNT1
-				CALL 	COUNT1
-				CALL	COUNT1
-				CALL 	COUNT1
-				CALL 	COUNT1
-				CALL	COUNT1
-				RETURN
-
-HALLØJ			MOVLW	b'11000000'  ; Halløj får LED til at lyse og relæet aktiveres
+HALLØJ			MOVLW	b'11000000'  	; Halløj får LED til at lyse og relæet aktiveres
 				MOVWF	PORTA
-				CALL	PAUSE
 				CALL	PAUSE
 				CLRF 	PORTB
 				CALL	PAUSE
 				CALL	PAUSE
 				CALL	PAUSE
-				MOVLW	b'00000000'
-				MOVWF	PORTA
+				CLRF	PORTA
 				RETURN 
 
 LYDBEHANDLING	GOTO 	VENT			; Lader lyden lyde VENTs tid
@@ -242,6 +223,11 @@ LYSBEHANDLING	BSF		PORTA,6			; Tænd for bit 6, som tænder for den kraftige LED
 				RETURN
 
 
+RADIOBEHANDLING	BSF		PORTA,7			; Tænd for relæet
+RADIOLOOP		BTFSC	PORTA,2
+				GOTO	RADIOLOOP
+				BCF		PORTA,7			; Sluk for relæet
+				RETURN					
 
 
 
@@ -254,6 +240,32 @@ LOOP1 			MOVFW	TMR0 			; Flyt indholdet af TMR0 til W-registret
 				RETURN 					; Forlad subrutinen
 				
 
+CHECKLYD		MOVLW	B'00000000'		;Configurer ADCON og sluk denne
+				MOVWF	ADCON0			;
+				BSF		ADCON0,0		;Tænd ADCON - ADON = 1
+				BSF 	ADCON0,2		;Starter adconverteringen og venter til denne er lav igen
+LOOP_AD_LYD		BTFSC	ADCON0,2	
+				GOTO	LOOP_AD_LYD
+				MOVF 	ADRESH,W 		;Move Analogue result into W
+				SUBLW 	.122 			;Do 122 – ADRES, i.e. 122-W
+				BTFSC 	Status,Carry 	;Check the carry bit. Clear if ADRES>122 i.e. ve
+				RETURN			 		;Routine to turn off LED
+				GOTO 	LYDBEHANDLING	;Routine to turn on LED
+				RETURN
+
+
+CHECKLYS		MOVLW	B'00001000'		;Configurer ADCON og sluk denne
+				MOVWF	ADCON0			;
+				BSF		ADCON0,0		;Tænd ADCON - ADON = 1
+				BSF 	ADCON0,2		;Starter adconverteringen og venter til denne er lav igen
+LOOP_AD_LYS		BTFSC	ADCON0,2	
+				GOTO	LOOP_AD_LYS
+				MOVF 	ADRESH,W 		;Move Analogue result into W
+				SUBLW 	.122 			;Do 122 – ADRES, i.e. 122-W
+				BTFSC 	Status,Carry 	;Check the carry bit. Clear if ADRES>122
+				RETURN			 		;Routine to turn off LED
+				GOTO 	LYSBEHANDLING	;Routine to turn on LED
+				RETURN
 
 
 
@@ -264,13 +276,14 @@ LOOP1 			MOVFW	TMR0 			; Flyt indholdet af TMR0 til W-registret
 ;
 ;*********************************************************************************************
 
-MAIN			BTFSS	PORTA, 0		; Tjek om der er lyd fra forstærkeren. Hvis der er, så aktiveres lydbehandling
-				GOTO	LYDBEHANDLING	; Gå til lydbehandling
-				BTFSS	PORTA, 1		; Tjek om der er strøm fra lyssensoren
-				GOTO 	LYSBEHANDLING	; Gå til lydbehandling
-				BTFSS	PORTA, 2		; Tjek om der er strøm fra radiosensoren
-				GOTO 	LYSBEHANDLING	; Gå til radiobehandling
-				GOTO 	VENT
+MAIN			GOTO 	CHECKLYD
+				GOTO 	CHECKLYS
+				BTFSC 	PORTA, 2		; Tjek om der er strøm fra radiosensoren
+				GOTO 	RADIOBEHANDLING	; Gå til radiobehandling
+				GOTO 	PAUSE_800_US
 				GOTO 	MAIN
 
 END
+
+
+
