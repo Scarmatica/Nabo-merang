@@ -1,13 +1,13 @@
 ;****************************************************************************
 ;*                           - Pic Projekt -                                *
 ;*                                                                          *
-;*  PROJEKT ANSV.:  	Nikolaj Høgh                                    	*      
+;*  PROJEKT ANSV.:  	Nikolaj Høgh og Jonas Bull Nejmann                 	*      
 ;*  NAVN:           	PIC Transmitter 0.8 ms								*
 ;*  PROCESSOR:      	PIC16F819                                   	    *
-;*  CLOCK: 	    		Intern Osc - 1 MHz(Op til 8 MHZ m. intern osc.)	 *
+;*  CLOCK: 	    		Intern Osc - 1 MHz(Op til 8 MHZ m. intern osc.)	    *
 ;*  FILE:  	        	hello-world_PIC16F819_SIMPLE                     	*
 ;*  WATCHDOGTIMER:  	no                                               	*
-;*  REVISION:	    	31.10.2023                                       	*
+;*  REVISION:	    	14.04.2023                                       	*
 ;*                                                                          *
 ;*                                                                          *
 ;****************************************************************************
@@ -139,11 +139,11 @@ BIT_TELLER	EQU 	0x26		;Opretter et register til tælling
 
 SETUP	BCF		STATUS,6			;Dvs ikke bank 2 eller 3 - hhv 'b'10 og 'b'11 for RP1,RP0
 
-		BSF		STATUS,5			;GÃ¥ til Bank 1 (5. bit kaldes ogsÃ¥ RP0) 
+		BSF		STATUS,5			;Gå til Bank 1 (5. bit kaldes også RP0) 
 									; - operationen kaldes ogsÃ¥ "Bank Select"
 
 		MOVLW	B'11111111'			;Hele PORT A er input RA0-RA7 
-									;RA5 kan kun vÃ¦re input (Input fra knap)
+									;RA5 kan kun være input (Input fra knap)
 		MOVWF	TRISA				;SÃ¦t in-out bitmÃ¸nstret til tris-reg. port A (file 85H)
 
 
@@ -152,16 +152,16 @@ SETUP	BCF		STATUS,6			;Dvs ikke bank 2 eller 3 - hhv 'b'10 og 'b'11 for RP1,RP0
 
 
 		MOVLW	B'00000110'			;Fortæller at A0 (RA0) er DIGITAL input (se side 170 i bogen
-									;"PIC in practice" - eller pÃ¥ side 82 i datablad for 16F818/819)
+									;"PIC in practice" - eller på side 82 i datablad for 16F818/819)
 									; Se RIGISTER 11-2 i databladet
 		MOVWF	ADCON1				;Informationen placeres i AD control register nr. 1
 
 		MOVLW	B'01000000'			;Fortæller intern clock skal være 1 MHz (Op til 8 MHz)
 									;(Se side 38 i datablad) ,  bit  IOFS=0 
-		MOVWF	OSCCON				;OSCCON ligger på adressen 0x8F - altsÃ¥ i bank 1
+		MOVWF	OSCCON				;OSCCON ligger på adressen 0x8F - altså i bank 1
 
 		
-		MOVLW	B'00000001'			;PreScaler er 1:4 -  Dvs. timerens tÃ¦llehastighed er rimelig hurtig !!!
+		MOVLW	B'00000001'			;PreScaler er 1:4 -  Dvs. timerens tællehastighed er rimelig hurtig !!!
 									; (Bit 7 og 6 SKAL LIGE CHECKES m.h.p. INTERRUPT-KONTROL )
 		MOVWF	OPTION_R			;Fortæl om prescaler-tallet til option registret
 
@@ -171,17 +171,22 @@ SETUP	BCF		STATUS,6			;Dvs ikke bank 2 eller 3 - hhv 'b'10 og 'b'11 for RP1,RP0
 		CLRF	PORTA				;Nulstil portA
 		CLRF 	PORTB				;Nulstil portB
 	
-		CALL	GODAW				;Hop til Godaw
+		;CALL	GODAW				;Hop til Godaw
 		
-		CALL	GODAW
+		;CALL	GODAW
 		
-		CALL	GODAW
+		;CALL	GODAW
 		
 		GOTO	MAIN				; Hop til main
 
 
-; SLUT PÃ… SETUP. 
+; SLUT PÅ SETUP. 
 
+;*********************************************************************************************
+;      
+;		SUBRUTINER
+;
+;*********************************************************************************************
 
 
 
@@ -244,10 +249,10 @@ GODAW			MOVLW	b'00001111'  ; Godaw får alle 4 LED til at blinke EN gang
 
 
 PAUSE_800_US	CLRF	TMR0 			; Timer0 nulstilles
-LOOP1 			MOVFW	TMR0 			; Flyt indholdet af TMR0 til W-registret
+LOOP3 			MOVFW	TMR0 			; Flyt indholdet af TMR0 til W-registret
 				SUBLW	d'47'
 				BTFSS	STATUS,ZEROBIT 	; Tjek om det gav nul. Hvis ja: hop ud af lÃ¸kken
-				GOTO	LOOP1			; Hvis nej: bliv i lÃ¸kken (gÃ¥ til LOOP1-label)
+				GOTO	LOOP3			; Hvis nej: bliv i lÃ¸kken (gÃ¥ til LOOP1-label)
 				RETURN 					; Forlad subrutinen
 				
 
@@ -259,13 +264,12 @@ SEND_0 			BSF 	PORTB,0 		; Sæt biten høj
 				RETURN 					; Returner
 
 SEND_1 			BSF		PORTB,0 		; Sæt biten høj
-				CALL 	PAUSE_800_US 	;
+				CALL 	PAUSE_800_US	;
 				CALL 	PAUSE_800_US 	; Vent i alt 1,6 ms (2 x 0,8 us)
 				BCF 	PORTB,0 		; Sæt biten lav
-				CALL	PAUSE_800_US 	;
-				CALL 	PAUSE_800_US 	; Vent i alt 1,6 ms (2 x 0,8 us)
+				CALL	PAUSE_800_US	;
+				CALL 	PAUSE_800_US	; Vent i alt 1,6 ms (2 x 0,8 us)
 				RETURN 					; Returner
-
 
 
 SEND_BIT7 		BTFSS 	OUTPUT_BYTE,7 	; Hvis Bit7 er sat, så hop næste linje over
@@ -294,7 +298,6 @@ SEND_STARTBIT 	BSF 	PORTB,RB0 		; Sæt bit’en høj
  				CALL 	PAUSE_800_US 	; 
  				CALL 	PAUSE_800_US 	;
  				CALL 	PAUSE_800_US 	; Vent ialt 2,4 ms (3 x 0,8 ms)
- 				CALL 	LIDT_EKSTRA 	; Nogle NOP’er for at “fin-tune” tiden
 				BCF 	PORTB,RB0 		; Sæt bit’en lav 
  				CALL 	PAUSE_800_US 	;
  				CALL 	PAUSE_800_US 	; 
@@ -306,7 +309,7 @@ SWITCH1			MOVLW	B'00111100'		;En bestemt byte flyttes til w-registret
 				MOVWF	OUTPUT_BYTE		;Og gemmes i filen OUTPUT_BYTE
 				CALL	SEND_STARTBIT	;En startbit sendes
 				CALL 	SEND_OUTPUT_BYTE	;Nu sendes OUTPUT_BYTE
-				RETURN'
+				RETURN
 
 SWITCH2			MOVLW	B'11000011'		;En bestemt byte flyttes til w-registret	
 				MOVWF	OUTPUT_BYTE		;Og gemmes i filen OUTPUT_BYTE
@@ -324,8 +327,12 @@ SWITCH2			MOVLW	B'11000011'		;En bestemt byte flyttes til w-registret
 
 MAIN			BTFSC	PORTA,0			;Der tjekkes om der trykkes på den ene knap og skippes hvis der ikke trykkes
 				CALL	SWITCH1			;NU sendes en bestemt byte
-				BTFSC	PORTA,5			;Der tjekkes om der trykkes på den anden knap og skippes hvis der ikke trykkes
+				BTFSC	PORTA,1			;Der tjekkes om der trykkes på den anden knap og skippes hvis der ikke trykkes
 				CALL	SWITCH2			;Nu sendes en anden byte
+				CALL	PAUSE_100MS		;Kort pause
+				CALL	PAUSE_100MS		;Kort pause
+				CALL	PAUSE_100MS		;Kort pause
+				CALL	PAUSE_100MS		;Kort pause
 				CALL	PAUSE_100MS		;Kort pause
 				GOTO 	MAIN			;Forfra
 END
