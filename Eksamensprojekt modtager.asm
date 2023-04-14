@@ -1,13 +1,13 @@
 ;****************************************************************************
 ;*                           - Pic Projekt -                                *
 ;*                                                                          *
-;*  PROJEKT ANSV.:  	Jonas Bull Nejmann og Nikolaj Erhardsen Høgh        *      
+;*  PROJEKT ANSV.:  	Jonas Bull Nejmann                                *      
 ;*  NAVN:           	Radiokommunikation modtager.asm                     *
-;*  PROCESSOR:      	PIC16F819                                           *
-;*  CLOCK: 	    	Intern Osc - 1 MHz(Op til 8 MHZ m. intern osc.)         *
-;*  FILE:  	        	Radiokommunikation modtager                  	    *
-;*  WATCHDOGTIMER:  	no                                            	    *
-;*  REVISION:	    	24.04.2023                                    		*
+;*  PROCESSOR:      	PIC16F819                                        *
+;*  CLOCK: 	    	Intern Osc - 1 MHz(Op til 8 MHZ m. intern osc.) *
+;*  FILE:  	        	Radiokommunikation modtager                     *
+;*  WATCHDOGTIMER:  	no                                               *
+;*  REVISION:	    	24.01.2023                                      *
 ;*                                                                          *
 ;*                                                                          *
 ;****************************************************************************
@@ -18,7 +18,7 @@
 ;*  RA1 = Digital INPUT 
 ;*  RA2 = Digital INPUT 
 ;*  RA3 = Digital INPUT 
-;*  RA4 = Digital Output
+;*  RA4 = Digital INPUT 
 ;*  RA5 = Digital INPUT  (OBS: RA5 kan kun være input - Vær opmærksom på dette!!!)
 ;*  RA6 = Digital INPUT 
 ;*  RA7 = Digital INPUT 
@@ -144,7 +144,7 @@ SETUP	BCF		STATUS,6			;Dvs ikke bank 2 eller 3 - hhv 'b'10 og 'b'11 for RP1,RP0
 		BSF		STATUS,5			;Gå til Bank 1 (5. bit kaldes også RP0) 
 									; - operationen kaldes også "Bank Select"
 
-		MOVLW	B'11101111'			;Hele PORT A er input RA0-RA7 udover RA4, der er output 
+		MOVLW	B'11110111'			;Hele PORT A er input RA0-RA7 
 									;RA5 kan kun være input (Input fra knap)
 		MOVWF	TRISA				;Sæt in-out bitmønstret til tris-reg. port A (file 85H)
 
@@ -230,7 +230,6 @@ GODAW			MOVLW	b'11111111'  ; Godaw får alle 8 LED til at blinke EN gang
 				CALL	PAUSE
 				RETURN 
 
-
 PAUSE_100MS		MOVLW	d'62'
 				MOVWF	TELLER
 LOOP2			CLRF	TMR0
@@ -244,10 +243,10 @@ LOOP1			MOVFW	TMR0
 				RETURN
 
 
-VENT_PAA_STARTBIT BTFSS PORTA,5 	; Vent her så længe input er lavt
+VENT_PAA_STARTBIT BTFSS PORTA,0 	; Vent her så længe input er lavt
 				GOTO 	VENT_PAA_STARTBIT
 				CLRF 	TMR0
-LOOP5 			BTFSC 	PORTA,5 	; Vent her så længe input er højt
+LOOP5 			BTFSC 	PORTA,0 	; Vent her så længe input er højt
 				GOTO 	LOOP5
 				MOVFW 	TMR0 		; Gem indholdet af TMR0, da værdien
  									; skal testes flere gange i det
@@ -286,10 +285,10 @@ LOOP_8_GANGE 	CALL 	MODTAG_EN_BIT ; Modtag en bit
  				RETURN			 	; Returnér
 
 
-MODTAG_EN_BIT 	BTFSS 	PORTA,5 	; Vent til input går høj
+MODTAG_EN_BIT 	BTFSS 	PORTA,0 	; Vent til input går høj
 				GOTO 	MODTAG_EN_BIT
 				CLRF 	TMR0 		; Nulstil timeren
-LOOP_HOJ 		BTFSC 	PORTA,5 	; Vent til input går lav igen
+LOOP_HOJ 		BTFSC 	PORTA,0 	; Vent til input går lav igen
 				GOTO	LOOP_HOJ
 				MOVFW 	TMR0 		; Aflæs timer
 				MOVWF 	TMR0_COPY 	; Gem indholdet af timer
@@ -333,6 +332,16 @@ GEM_1 			RLF 	INPUT_BYTE 	; Roter input-filen, så den er klar
  				RETURN 				; Returnér
 
 
+KOMPLEMENTERFIL	COMF	OUTPUT_FIL			; OUTPUT_FIL komplementeres, så outputtet skifter hver gang den mtodtager et nyt signal.
+				BTFSS	OUTPUT_FIL,0		; Der testes om OUTPUT_FIL's 0. bit er høj
+				BCF		PORTB,4				; Hvis den 0. bit er lav, så skal PORTA's 4. bit gøres lav
+				BTFSC	OUTPUT_FIL,0		; Der testes om OUTPUT_FIL's 0. bit er lav
+				BSF		PORTB,4				; Hvis den 0. bit er høj, så skal PORTA's 4. bit gøres høj
+				CALL	PAUSE_100MS			;Kort pause
+				BCF		MODTAGERFIL,0		;De to modtagerfiler cleares.
+				BCF		MODTAGERFIL,1
+				RETURN
+
 LOOP_SWITCH		CALL 	VENT_PAA_STARTBIT 	; Loop her indtil der modtages en puls på 2,4 ms
 				CALL 	MODTAG_EN_BYTE 		; Modtag de 8 bit
 				MOVFW 	INPUT_BYTE 			; Flyt de 8 bit fra INPUT_BYTE registret til W registret
@@ -343,16 +352,6 @@ LOOP_SWITCH		CALL 	VENT_PAA_STARTBIT 	; Loop her indtil der modtages en puls på 
  				SUBLW	b'11000011'			; Den byte, der skulle sendes trækkes fra W registret
 				BTFSC	STATUS,ZEROBIT		; Der tjekkes for ZEROBIT
 				BSF		MODTAGERFIL,1		;Bitten sættes høj
-				RETURN
-
-KOMPLEMENTERFIL	COMF	OUTPUT_FIL			; OUTPUT_FIL komplementeres, så outputtet skifter hver gang den mtodtager et nyt signal.
-				BTFSS	OUTPUT_FIL,0		; Der testes om OUTPUT_FIL's 0. bit er høj
-				BCF		PORTA,4				; Hvis den 0. bit er lav, så skal PORTA's 4. bit gøres lav
-				BTFSC	OUTPUT_FIL,0		; Der testes om OUTPUT_FIL's 0. bit er lav
-				BSF		PORTA,4				; Hvis den 0. bit er høj, så skal PORTA's 4. bit gøres høj
-				CALL	PAUSE_100MS			;Kort pause
-				BCF		MODTAGERFIL,0		;De to modtagerfiler cleares.
-				BCF		MODTAGERFIL,1
 				RETURN
 
 ;*********************************************************************************************
@@ -366,6 +365,16 @@ MAIN	CALL 	LOOP_SWITCH					;Gå ind i et loop for at tjekke for en modtaget puls
 		GOTO	MAIN						;Tilbage for at tjekke om der modtages en puls
 		BTFSS	MODTAGERFIL,1				;Tjek om modtagerfil,1 er høj og skip hvis den er.
 		GOTO 	MAIN 						;Tilbage for at tjekke om der modtages en puls
-		CALL	KOMPLEMENTERFIl				;Kald komplementerfil, hvor outputtet ændres.
+		CALL	KOMPLEMENTERFIL				;Kald komplementerfil, hvor outputtet ændres.
+		CALL	PAUSE_100MS					;PAUSE på 1 sekund i alt.
+		CALL	PAUSE_100MS
+		CALL	PAUSE_100MS
+		CALL	PAUSE_100MS
+		CALL	PAUSE_100MS
+		CALL	PAUSE_100MS
+		CALL	PAUSE_100MS
+		CALL	PAUSE_100MS
+		CALL	PAUSE_100MS
+		CALL	PAUSE_100MS
 		GOTO	MAIN						;Forfra
 END
