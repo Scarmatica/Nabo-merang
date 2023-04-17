@@ -18,7 +18,7 @@
 ;*  RA1 = Digital INPUT 
 ;*  RA2 = Digital INPUT 
 ;*  RA3 = Digital INPUT 
-;*  RA4 = Digital INPUT 
+;*  RA4 = Digital OUTPUT
 ;*  RA5 = Digital INPUT  (OBS: RA5 kan kun være input - Vær opmærksom på dette!!!)
 ;*  RA6 = Digital INPUT 
 ;*  RA7 = Digital INPUT 
@@ -144,7 +144,7 @@ SETUP	BCF		STATUS,6			;Dvs ikke bank 2 eller 3 - hhv 'b'10 og 'b'11 for RP1,RP0
 		BSF		STATUS,5			;Gå til Bank 1 (5. bit kaldes også RP0) 
 									; - operationen kaldes også "Bank Select"
 
-		MOVLW	B'11110111'			;Hele PORT A er input RA0-RA7 
+		MOVLW	B'11110111'			;Hele PORT A er input RA0-RA7 udover RA4, der er output.
 									;RA5 kan kun være input (Input fra knap)
 		MOVWF	TRISA				;Sæt in-out bitmønstret til tris-reg. port A (file 85H)
 
@@ -342,25 +342,22 @@ KOMPLEMENTERFIL	COMF	OUTPUT_FIL			; OUTPUT_FIL komplementeres, så outputtet skif
 				BCF		MODTAGERFIL,1
 				RETURN
 
-LOOP_SWITCH		CALL 	VENT_PAA_STARTBIT 	; Loop her indtil der modtages en puls på 2,4 ms
-				CALL 	MODTAG_EN_BYTE 		; Modtag de 8 bit
-				MOVFW 	INPUT_BYTE 			; Flyt de 8 bit fra INPUT_BYTE registret til W registret
- 				SUBLW	b'00111100'			; Den byte, der skulle sendes trækkes fra W registret
-				BTFSC	STATUS,ZEROBIT		; Der tjekkes for ZEROBIT
-				BSF		MODTAGERFIL,0		;Bitten sættes høj
-				MOVFW 	INPUT_BYTE 			; Flyt de 8 bit fra INPUT_BYTE registret til W registret
- 				SUBLW	b'11000011'			; Den byte, der skulle sendes trækkes fra W registret
-				BTFSC	STATUS,ZEROBIT		; Der tjekkes for ZEROBIT
-				BSF		MODTAGERFIL,1		;Bitten sættes høj
-				RETURN
-
 ;*********************************************************************************************
 ;      
 ;		MAIN 
 ;
 ;*********************************************************************************************
 
-MAIN	CALL 	LOOP_SWITCH					;Gå ind i et loop for at tjekke for en modtaget puls
+MAIN	CALL 	VENT_PAA_STARTBIT 			; Loop her indtil der modtages en puls på 2,4 ms
+		CALL 	MODTAG_EN_BYTE 				; Modtag de 8 bit
+		MOVFW 	INPUT_BYTE 					; Flyt de 8 bit fra INPUT_BYTE registret til W registret
+ 		SUBLW	b'00111100'					; Den byte, der skulle sendes trækkes fra W registret
+		BTFSC	STATUS,ZEROBIT				; Der tjekkes for ZEROBIT
+		BSF		MODTAGERFIL,0				;Bitten sættes høj
+		MOVFW 	INPUT_BYTE 					; Flyt de 8 bit fra INPUT_BYTE registret til W registret
+ 		SUBLW	b'11000011'					; Den byte, der skulle sendes trækkes fra W registret
+		BTFSC	STATUS,ZEROBIT				; Der tjekkes for ZEROBIT
+		BSF		MODTAGERFIL,1				;Bitten sættes høj
 		BTFSS	MODTAGERFIL,0				;Tjek om modtagerfil,0 er høj og skip hvis den er.
 		GOTO	MAIN						;Tilbage for at tjekke om der modtages en puls
 		BTFSS	MODTAGERFIL,1				;Tjek om modtagerfil,1 er høj og skip hvis den er.
