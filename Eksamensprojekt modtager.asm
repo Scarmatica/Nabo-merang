@@ -173,11 +173,11 @@ SETUP	BCF		STATUS,6			;Dvs ikke bank 2 eller 3 - hhv 'b'10 og 'b'11 for RP1,RP0
 		CLRF	PORTA				;Nulstil portA
 		CLRF 	PORTB				;Nulstil portB
 	
-		CALL	GODAW				;Hop til Godaw
+		;CALL	GODAW				;Hop til Godaw
 		
-		CALL	GODAW
+		;CALL	GODAW
 		
-		CALL	GODAW
+		;CALL	GODAW
 		
 		GOTO	MAIN				; Hop til main
 
@@ -228,7 +228,7 @@ GODAW			MOVLW	b'11111111'  ; Godaw får alle 8 LED til at blinke EN gang
 				CALL	PAUSE
 				CALL	PAUSE
 				CALL	PAUSE
-				RETURN 
+				RETURN
 
 PAUSE_100MS		MOVLW	d'62'
 				MOVWF	TELLER
@@ -363,15 +363,10 @@ MAIN	CALL 	VENT_PAA_STARTBIT 			; Loop her indtil der modtages en puls på 2,4 ms
 		BTFSS	MODTAGERFIL,1				;Tjek om modtagerfil,1 er høj og skip hvis den er.
 		GOTO 	MAIN 						;Tilbage for at tjekke om der modtages en puls
 		CALL	KOMPLEMENTERFIL				;Kald komplementerfil, hvor outputtet ændres.
-		CALL	PAUSE_100MS					;PAUSE på 1 sekund i alt.
-		CALL	PAUSE_100MS
-		CALL	PAUSE_100MS
-		CALL	PAUSE_100MS
-		CALL	PAUSE_100MS
-		CALL	PAUSE_100MS
-		CALL	PAUSE_100MS
-		CALL	PAUSE_100MS
-		CALL	PAUSE_100MS
-		CALL	PAUSE_100MS
+		CALL	PAUSE_100MS					;PAUSE på 500 ms i alt.
+		CALL	PAUSE_100MS					;PAUSE på 500 ms i alt.
+		CALL	PAUSE_100MS					;PAUSE på 500 ms i alt.
+		CALL	PAUSE_100MS					;PAUSE på 500 ms i alt.
+		CALL	PAUSE_100MS					;PAUSE på 500 ms i alt.
 		GOTO	MAIN						;Forfra
 END
