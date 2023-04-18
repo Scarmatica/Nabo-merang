@@ -273,41 +273,18 @@ LOOP_AD_LYD		BTFSC	ADCON0,2
 
 
 TÆL1OP			MOVFW	PORTB			;Flytter 9 til w-registret
-				CALL	CLR2NIB			;Tømmmer nibble 2 
+				ANDLW	b'00001111'		;Tømmmer nibble 2 
 				SUBLW	d'9'			;Trækker 10 fra nibble 1
 				BTFSC 	STATUS,ZEROBIT	;Tjekker om nibble 1 var 10(om den er clear), hvis den var, så spring over næste kommando
 				GOTO	TÆL10OP			;Går til subrutinen som lægger 1 til nibble 2
-				ADDWF	W,d'1'			;Hvis zerobit er clear(nibble 1 var ikke 10), så læg 1 til w-registret
+				MOVFW	PORTB
+				ADDLW	d'1'			;Hvis zerobit er clear(nibble 1 var ikke 10), så læg 1 til w-registret
 HJEM_TÆL		MOVWF	PORTB			;Flyt w-registret til port b
 				RETURN
 
 TÆL10OP			MOVFW	PORTB			;Flytter data fra port b til w-registret
-				ADDWF	W,d'6'			;Lægger 6 til sådan at vi omgår hexadecimal notation
+				ADDLW	d'7'			;Lægger 6 til sådan at vi omgår hexadecimal notation
 				GOTO	HJEM_TÆL		;Bruges til at hoppe over kommandoen er lægger 1 til
-
-
-
-
-SET1NIB			BSF		W,0		;Subrutine til at sætte nibble 1 til 1111
-				BSF		W,1		; Er denne nødvendig
-				BSF		W,2
-				BSF		W,3
-				RETURN
-
-
-CLR1NIB			BCF		W,0		;Subrutine til at sætte nibble 1 til 0000
-				BCF		W,1		
-				BCF		W,2
-				BCF		W,3
-				RETURN
-
-CLR2NIB			BCF		W,4		;Subrutine til at sætte nibble 1 til 0000
-				BCF		W,5		;Er denne nødvendig
-				BCF		W,6
-				BCF		W,7
-				RETURN
-
-
 
 
 
