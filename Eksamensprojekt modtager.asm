@@ -243,10 +243,10 @@ LOOP1			MOVFW	TMR0			; Flyt indholdet af TMR0 til W-registret
 				RETURN					; Returner
 
 
-VENT_PAA_STARTBIT BTFSS PORTA,0 	; Vent her så længe input er lavt
+VENT_PAA_STARTBIT BTFSS PORTA,5 	; Vent her så længe input er lavt
 				GOTO 	VENT_PAA_STARTBIT
 				CLRF 	TMR0		; Timor 0 nulstilles
-LOOP5 			BTFSC 	PORTA,0 	; Vent i LOOP5 så længe input er højt
+LOOP5 			BTFSC 	PORTA,5 	; Vent i LOOP5 så længe input er højt
 				GOTO 	LOOP5
 				MOVFW 	TMR0 		; Gem indholdet af TMR0, da værdien
  									; skal testes flere gange i det
@@ -284,10 +284,10 @@ LOOP_8_GANGE 	CALL 	MODTAG_EN_BIT ; Modtag en bit
  				RETURN			 	; Returnér
 
 
-MODTAG_EN_BIT 	BTFSS 	PORTA,0 	; Vent til input går høj
+MODTAG_EN_BIT 	BTFSS 	PORTA,5 	; Vent til input går høj
 				GOTO 	MODTAG_EN_BIT
 				CLRF 	TMR0 		; Nulstil timeren
-LOOP_HOJ 		BTFSC 	PORTA,0 	; Vent til input går lav igen
+LOOP_HOJ 		BTFSC 	PORTA,5 	; Vent til input går lav igen
 				GOTO	LOOP_HOJ
 				MOVFW 	TMR0 		; Aflæs timer
 				MOVWF 	TMR0_COPY 	; Gem indholdet af timer
