@@ -144,7 +144,7 @@ SETUP	BCF		STATUS,6			;Dvs ikke bank 2 eller 3 - hhv 'b'10 og 'b'11 for RP1,RP0
 		BSF		STATUS,5			;Gå til Bank 1 (5. bit kaldes også RP0) 
 									; - operationen kaldes også "Bank Select"
 
-		MOVLW	B'11110111'			;Hele PORT A er input RA0-RA7 udover RA4, der er output.
+		MOVLW	B'11101111'			;Hele PORT A er input RA0-RA7 udover RA4, der er output.
 									;RA5 kan kun være input (Input fra knap)
 		MOVWF	TRISA				;Sæt in-out bitmønstret til tris-reg. port A (file 85H)
 
@@ -220,7 +220,7 @@ PAUSE			CALL 	COUNT1
 				CALL	COUNT1
 				RETURN
 
-GODAW			MOVLW	b'11111111'  ; Godaw får alle 8 LED til at blinke EN gang
+GODAW			MOVLW	b'11111111'  ; Godaw får 8 LED til at blinke samtidig
 				MOVWF	PORTB
 				CALL	PAUSE
 				CALL	PAUSE
@@ -230,23 +230,23 @@ GODAW			MOVLW	b'11111111'  ; Godaw får alle 8 LED til at blinke EN gang
 				CALL	PAUSE
 				RETURN
 
-PAUSE_100MS		MOVLW	d'62'
+PAUSE_100MS		MOVLW	d'62'			; Flyt 62 til W-register og derefter til TELLER
 				MOVWF	TELLER
-LOOP2			CLRF	TMR0
-LOOP1			MOVFW	TMR0
-				SUBLW	d'100'			
-				BTFSS	STATUS,ZEROBIT
-				GOTO	LOOP1
-				DECFSZ	TELLER
-				GOTO	LOOP2
-				CLRF	TMR0
-				RETURN
+LOOP2			CLRF	TMR0			; Timer0 nulstilles
+LOOP1			MOVFW	TMR0			; Flyt indholdet af TMR0 til W-registret
+				SUBLW	d'100'			; Træk indholdet i W-registret fra 100		
+				BTFSS	STATUS,ZEROBIT	; Tjek om det gav nul. Hvis ja: hop ud af løkken
+				GOTO	LOOP1			; Hvis nej: bliv i løkken (gå til Loop1)
+				DECFSZ	TELLER			; Træk 1 fra TELLER og tjek om det gav 0.
+				GOTO	LOOP2			; Hvis ja: Spring over denne linje. Hvis nej: Bliv i løkken
+				CLRF	TMR0			; Clear Timer 0
+				RETURN					; Returner
 
 
 VENT_PAA_STARTBIT BTFSS PORTA,0 	; Vent her så længe input er lavt
 				GOTO 	VENT_PAA_STARTBIT
-				CLRF 	TMR0
-LOOP5 			BTFSC 	PORTA,0 	; Vent her så længe input er højt
+				CLRF 	TMR0		; Timor 0 nulstilles
+LOOP5 			BTFSC 	PORTA,0 	; Vent i LOOP5 så længe input er højt
 				GOTO 	LOOP5
 				MOVFW 	TMR0 		; Gem indholdet af TMR0, da værdien
  									; skal testes flere gange i det
@@ -255,13 +255,12 @@ LOOP5 			BTFSC 	PORTA,0 	; Vent her så længe input er højt
 				BTFSS 	TMR0_COPY,7 ; Test om MSB er sat. Det er den,
 									; hvis der er modtaget en startbit
 				GOTO 	VENT_PAA_STARTBIT
-				BTFSC 	TMR0_COPY,5
+				BTFSC 	TMR0_COPY,5	; Test om bit 5 er clear
 				GOTO 	VENT_PAA_STARTBIT
-				BTFSS 	TMR0_COPY,4
+				BTFSS 	TMR0_COPY,4	; Test om bit 4 er sat
 				GOTO 	VENT_PAA_STARTBIT
-
 				RETURN 				; Returnér, når der er modtaget en
- 									; puls, hvor TMR0 >= 128			
+ 									; puls, hvor 160 >= TMR0 >= 144			
 
 MODTAG_EN_BYTE 	MOVLW 	b'00001000' ; Flyt tallet 8 til W
 				MOVWF 	BIT_TELLER	; Læg tallet i bit-teller
@@ -300,7 +299,7 @@ LOOP_HOJ 		BTFSC 	PORTA,0 	; Vent til input går lav igen
 				RETURN 				; Returnér
 
 HVILKEN_BIT 	BTFSS 	TMR0_COPY,6 ; Test om bit 6 er clear
- 				CALL 	TEST_0 		; test om det er et 0
+ 				CALL 	TEST_0 		; Test om det er et 0
  				BTFSS 	TMR0_COPY,4 ; Test om bit 4 er clear
  				CALL 	TEST_1 		; Test om det er et 1
  				RETURN 				; Returnér
@@ -334,39 +333,39 @@ GEM_1 			RLF 	INPUT_BYTE 	; Roter input-filen, så den er klar
 
 KOMPLEMENTERFIL	COMF	OUTPUT_FIL			; OUTPUT_FIL komplementeres, så outputtet skifter hver gang den mtodtager et nyt signal.
 				BTFSS	OUTPUT_FIL,0		; Der testes om OUTPUT_FIL's 0. bit er høj
-				BCF		PORTB,4				; Hvis den 0. bit er lav, så skal PORTA's 4. bit gøres lav
+				BCF		PORTA,4				; Hvis den 0. bit er lav, så skal PORTA's 4. bit gøres lav
 				BTFSC	OUTPUT_FIL,0		; Der testes om OUTPUT_FIL's 0. bit er lav
-				BSF		PORTB,4				; Hvis den 0. bit er høj, så skal PORTA's 4. bit gøres høj
-				CALL	PAUSE_100MS			;Kort pause
-				BCF		MODTAGERFIL,0		;De to modtagerfiler cleares.
+				BSF		PORTA,4				; Hvis den 0. bit er høj, så skal PORTA's 4. bit gøres høj
+				CALL	PAUSE_100MS			; Kort pause
+				BCF		MODTAGERFIL,0		; De to bits i modtagerfilen cleares.
 				BCF		MODTAGERFIL,1
 				RETURN
 
 ;*********************************************************************************************
-;      
-;		MAIN 
-;
+;      																						 *
+;		MAIN 																				 *
+;																							 *
 ;*********************************************************************************************
 
-MAIN	CALL 	VENT_PAA_STARTBIT 			; Loop her indtil der modtages en puls på 2,4 ms
-		CALL 	MODTAG_EN_BYTE 				; Modtag de 8 bit
+MAIN	CALL 	VENT_PAA_STARTBIT 			; Loop her indtil startbitten på 2,4 ms modtages
+		CALL 	MODTAG_EN_BYTE 				; Modtag de 8 bit (byten)
 		MOVFW 	INPUT_BYTE 					; Flyt de 8 bit fra INPUT_BYTE registret til W registret
  		SUBLW	b'00111100'					; Den byte, der skulle sendes trækkes fra W registret
 		BTFSC	STATUS,ZEROBIT				; Der tjekkes for ZEROBIT
-		BSF		MODTAGERFIL,0				;Bitten sættes høj
+		BSF		MODTAGERFIL,0				; Bitten sættes høj
 		MOVFW 	INPUT_BYTE 					; Flyt de 8 bit fra INPUT_BYTE registret til W registret
  		SUBLW	b'11000011'					; Den byte, der skulle sendes trækkes fra W registret
 		BTFSC	STATUS,ZEROBIT				; Der tjekkes for ZEROBIT
-		BSF		MODTAGERFIL,1				;Bitten sættes høj
-		BTFSS	MODTAGERFIL,0				;Tjek om modtagerfil,0 er høj og skip hvis den er.
-		GOTO	MAIN						;Tilbage for at tjekke om der modtages en puls
-		BTFSS	MODTAGERFIL,1				;Tjek om modtagerfil,1 er høj og skip hvis den er.
-		GOTO 	MAIN 						;Tilbage for at tjekke om der modtages en puls
-		CALL	KOMPLEMENTERFIL				;Kald komplementerfil, hvor outputtet ændres.
-		CALL	PAUSE_100MS					;PAUSE på 500 ms i alt.
-		CALL	PAUSE_100MS					;PAUSE på 500 ms i alt.
-		CALL	PAUSE_100MS					;PAUSE på 500 ms i alt.
-		CALL	PAUSE_100MS					;PAUSE på 500 ms i alt.
-		CALL	PAUSE_100MS					;PAUSE på 500 ms i alt.
+		BSF		MODTAGERFIL,1				; Bitten sættes høj
+		BTFSS	MODTAGERFIL,0				; Tjek om modtagerfil,0 er høj og skip hvis den er.
+		GOTO	MAIN						; Tilbage for at tjekke om der modtages en puls
+		BTFSS	MODTAGERFIL,1				; Tjek om modtagerfil,1 er høj og skip hvis den er.
+		GOTO 	MAIN 						; Tilbage for at tjekke om der modtages en puls
+		CALL	KOMPLEMENTERFIL				; Kald komplementerfil, hvor outputtet ændres.
+		CALL	PAUSE_100MS					; PAUSE på 500 ms i alt.
+		CALL	PAUSE_100MS
+		CALL	PAUSE_100MS
+		CALL	PAUSE_100MS
+		CALL	PAUSE_100MS			
 		GOTO	MAIN						;Forfra
 END
